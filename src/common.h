@@ -32,6 +32,7 @@ NvSciError ipc_send(IpcWrapper *ipc_wrapper, const void *data, size_t data_len);
 NvSciError ipc_recv_fill(IpcWrapper *ipc_wrapper, void *buf, size_t data_len);
 
 bool setup_cuda(CudaClientInfo *cuda_info);
+void *handle_sync_logic(IpcWrapper *ipc_wrapper);
 
 // #include <nvscibuf.h>
 // #include <nvscisync.h>

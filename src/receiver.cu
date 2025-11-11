@@ -1,4 +1,5 @@
 #include "common.h"
+#include <cstdio>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,10 @@
         fprintf(stderr, "Error: %s (code: %d)\n", msg, status);                \
         exit(EXIT_FAILURE);                                                    \
     }
+
+// void handle_sync_logic(IpcWrapper *ipc_wrapper) {
+
+// }
 
 void *consumer(IpcWrapper *ipc_wrapper) {
     NvSciError sci_err;
@@ -27,8 +32,8 @@ void *consumer(IpcWrapper *ipc_wrapper) {
         goto done;
     }
 
-    sci_err =
-        NvSciSyncAttrListCreate(ipc_wrapper->sync_module, &consumer_wait_attrs);
+    sci_err = NvSciSyncAttrListCreate(ipc_wrapper->sync_module,
+                                      &consumer_signal_attrs);
     if (sci_err != NvSciError_Success) {
         fprintf(stderr,
                 "consumer Error: NvSciSyncAttrListCreate failed (code: %d)\n",
@@ -39,10 +44,11 @@ void *consumer(IpcWrapper *ipc_wrapper) {
         consumer_signal_attrs, cuda_info.device_id, cudaNvSciSyncAttrSignal);
 
     if (cuda_err != cudaSuccess) {
-        fprintf(stderr,
-                "consumer Error: cudaDeviceGetNvSciSyncAttributes failed "
-                "(code: %d)\n",
-                cuda_err);
+        fprintf(
+            stderr,
+            "consumer Error: cudaDeviceGetNvSciSyncAttributes signal failed "
+            "(code: %d)\n",
+            cuda_err);
         goto done;
     }
 
@@ -59,7 +65,7 @@ void *consumer(IpcWrapper *ipc_wrapper) {
         consumer_wait_attrs, cuda_info.device_id, cudaNvSciSyncAttrWait);
     if (cuda_err != cudaSuccess) {
         fprintf(stderr,
-                "consumer Error: cudaDeviceGetNvSciSyncAttributes failed "
+                "consumer Error: cudaDeviceGetNvSciSyncAttributes wait failed "
                 "(code: %d)\n",
                 cuda_err);
         goto done;
@@ -76,6 +82,7 @@ void *consumer(IpcWrapper *ipc_wrapper) {
         goto done;
     }
 
+    printf("begin send send_wait_attr_list_size info\n");
     sci_err = ipc_send(ipc_wrapper, &send_wait_attr_list_size,
                        sizeof(send_wait_attr_list_size));
     if (sci_err != NvSciError_Success) {
@@ -116,28 +123,29 @@ int main(int argc, char *argv[]) {
     }
 
     printf("begin send handshake\n");
-    const int send_handshake = 123444;
-    err = ipc_send(&ipc_wrapper, &send_handshake, sizeof(send_handshake));
-    printf("finish send handshake!\n");
-    if (err != NvSciError_Success) {
-        fprintf(stderr, "Error: ipc_send failed (code: %d)\n", err);
+    // const int send_handshake = 123444;
+    // err = ipc_send(&ipc_wrapper, &send_handshake, sizeof(send_handshake));
+    // printf("finish send handshake!\n");
+    // if (err != NvSciError_Success) {
+    //     fprintf(stderr, "Error: ipc_send failed (code: %d)\n", err);
 
-        ipc_deinit(&ipc_wrapper);
-        exit(EXIT_FAILURE);
-    }
+    //     ipc_deinit(&ipc_wrapper);
+    //     exit(EXIT_FAILURE);
+    // }
 
-    sleep(1000);
-    int recv_handshake = 0;
-    err = ipc_recv_fill(&ipc_wrapper, &recv_handshake, sizeof(recv_handshake));
-    if (err != NvSciError_Success) {
-        fprintf(stderr, "Error: ipc_recv_fill failed (code: %d)\n", err);
+    // sleep(1000);
+    // int recv_handshake = 0;
+    // err = ipc_recv_fill(&ipc_wrapper, &recv_handshake,
+    // sizeof(recv_handshake)); if (err != NvSciError_Success) {
+    //     fprintf(stderr, "Error: ipc_recv_fill failed (code: %d)\n", err);
 
-        ipc_deinit(&ipc_wrapper);
-        exit(EXIT_FAILURE);
-    }
+    //     ipc_deinit(&ipc_wrapper);
+    //     exit(EXIT_FAILURE);
+    // }
 
-    printf("recv handshake info: %d\n", recv_handshake);
-    sleep(1000);
+    // printf("recv handshake info: %d\n", recv_handshake);
+    // sleep(1000);
+    consumer(&ipc_wrapper);
 
     return 0;
 }

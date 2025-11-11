@@ -13,6 +13,8 @@
         exit(EXIT_FAILURE);                                                    \
     }
 
+// void handle_sync_logic(IpcWrapper *ipc_wrapper) {}
+
 void *producer(IpcWrapper *ipc_wrapper) {
     NvSciError sci_err;
     int cuda_err;
@@ -57,7 +59,7 @@ void *producer(IpcWrapper *ipc_wrapper) {
     }
 
     cuda_err = cudaDeviceGetNvSciSyncAttributes(
-        producer_wait_attrs, cuda_info.device_id, cudaNvSciSyncAttrSignal);
+        producer_wait_attrs, cuda_info.device_id, cudaNvSciSyncAttrWait);
     if (cuda_err != cudaSuccess) {
         fprintf(stderr,
                 "Error: cudaDeviceGetNvSciSyncAttributes failed (code: %d)\n",
@@ -125,6 +127,8 @@ int main() {
         ipc_deinit(&ipc_wrapper);
         exit(EXIT_FAILURE);
     }
+
+    producer(&ipc_wrapper);
 
     return 0;
 }

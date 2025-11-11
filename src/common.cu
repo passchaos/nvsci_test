@@ -160,3 +160,65 @@ NvSciError ipc_recv_fill(IpcWrapper *ipc_wrapper, void *buf, size_t data_len) {
 
     return err;
 }
+
+void *handle_sync_logic(IpcWrapper *ipc_wrapper, CudaClientInfo *cuda_info,
+                        NvSciSyncAttrList *signal_attrs,
+                        NvSciSyncAttrList *wait_attrs) {
+    size_t send_wait_attr_list_size = 0U;
+    void *send_wait_list_desc = NULL;
+
+    if (!setup_cuda(&cuda_info)) {
+        fprintf(stderr, "Error: setup_cuda failed\n");
+        goto done;
+    }
+
+    sci_err = NvSciSyncAttrListCreate(ipc_wrapper->sync_module, signal_attrs);
+    if (sci_err != NvSciError_Success) {
+        fprintf(stderr, "Error: NvSciSyncAttrListCreate failed (code: %d)\n",
+                sci_err);
+        goto done;
+    }
+
+    cuda_err = cudaDeviceGetNvSciSyncAttributes(
+        *signal_attrs, cuda_info.device_id, cudaNvSciSyncAttrSignal);
+    if (cuda_err != cudaSuccess) {
+        fprintf(stderr,
+                "Error: cudaDeviceGetNvSciSyncAttributes failed (code: %d)\n",
+                cuda_err);
+        goto done;
+    }
+
+    fprintf(stderr, "cudaDeviceGetNvSciSyncAttributes succeeded\n");
+
+    sci_err = NvSciSyncAttrListCreate(ipc_wrapper->sync_module, &wait_attrs);
+    if (sci_err != NvSciError_Success) {
+        fprintf(stderr, "Error: NvSciSyncAttrListCreate failed (code: %d)\n",
+                sci_err);
+        goto done;
+    }
+
+    cuda_err = cudaDeviceGetNvSciSyncAttributes(
+        *wait_attrs, cuda_info.device_id, cudaNvSciSyncAttrWait);
+    if (cuda_err != cudaSuccess) {
+        fprintf(stderr,
+                "Error: cudaDeviceGetNvSciSyncAttributes failed (code: %d)\n",
+                cuda_err);
+        goto done;
+    }
+    fprintf(
+        stderr,
+        "cudaDeviceGetNvSciSyncAttributes for producer_wait_attrs succeeded\n");
+
+    sci_err = NvSciSyncAttrListIpcExportUnreconciled(
+        &wait_attrs, 1, ipc_wrapper->endpoint, &send_wait_list_desc,
+        &send_wait_attr_list_size);
+    if (sci_err != NvSciError_Success) {
+        fprintf(
+            stderr,
+            "Error: NvSciSyncAttrListIpcExportUnreconciled failed (code: %d)\n",
+            sci_err);
+        goto done;
+    }
+done:
+    return NULL;
+}
