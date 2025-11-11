@@ -1,0 +1,7 @@
+CompileFlags:
+  Add:
+    - -x
+    - cu
+    - -I/usr/local/cuda/include
+    - -I/home/robot/Work/nvsci_test/include
+  Remove: [--generate-code=arch=compute*, --options-file, -forward-unknown-to-host-compiler]
